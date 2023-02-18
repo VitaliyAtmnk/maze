@@ -5,7 +5,6 @@ import java.awt.*;
 import java.util.ArrayList;
 
 public class MiniMap extends JFrame {
-    ArrayList<Tile> rooms;
     private int x, y;
 
     MiniMap(ArrayList<Tile> maze, int dimension) {
@@ -15,7 +14,6 @@ public class MiniMap extends JFrame {
         this.setResizable(false);
 
         maze.sort(Tile.BY_INDEX);
-        rooms = new ArrayList<>(maze);
 
         for (Tile room : maze) {
             this.add(new TileImage(room));
