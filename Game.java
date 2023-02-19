@@ -18,6 +18,8 @@ public class Game extends JFrame implements ActionListener, KeyListener {
     MiniMap miniMap;
     final int DIMENSION;
 
+    int orbsLeft;
+
     /***
      * A window with "generated maze"
      * It puts player into a starting position, which is one of the Tiles from @maze list
@@ -43,7 +45,8 @@ public class Game extends JFrame implements ActionListener, KeyListener {
         westButton.setFocusable(false);
         eastButton.setFocusable(false);
 
-        help = new JLabel("TMP");
+        help = new JLabel("tmp");
+        help.setIcon(new ImageIcon(new ImageIcon("ikony/player.png").getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH)));
         help.setFont(new Font("Comic Sans MS", Font.BOLD, 26));
         help.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -53,10 +56,11 @@ public class Game extends JFrame implements ActionListener, KeyListener {
         this.add(westButton, BorderLayout.WEST);
         this.add(help, BorderLayout.CENTER);
 
-//        maze = initiateMaze();
+//        maze = ogMaze();
         DIMENSION = dimension;
         maze = generateMaze(DIMENSION);
         miniMap = new MiniMap(maze, DIMENSION);
+        orbsLeft = 1;
 
         northButton.addActionListener(this);
         southButton.addActionListener(this);
@@ -72,7 +76,7 @@ public class Game extends JFrame implements ActionListener, KeyListener {
         player = new Player();
         player.currentLocation = maze.get(randomNumberGenerator(DIMENSION * DIMENSION));
 
-        help.setText(player.currentLocation.orb ? "Press 'E'\nto pick up Orb" : String.valueOf(player.currentLocation.index));
+        help.setText(player.currentLocation.orb ? "Press 'E'\nto pick up Orb" : "\nOrbs left to place: " + orbsLeft);
         configButtons(player.currentLocation);
 
     }
@@ -208,13 +212,13 @@ public class Game extends JFrame implements ActionListener, KeyListener {
 
             for (int i = 0; i < 4; i++) {
                 neighbour = maze.get(neighbourIndex(current.index, i));
-                if(!visited.contains(neighbour)) {
-                    neighbours.add(neighbour);
-                    directions.add(i);
-                }
+                if (visited.contains(neighbour)) continue;
+                neighbours.add(neighbour);
+                directions.add(i);
+
             }
 
-            if(!neighbours.isEmpty()) {
+            if (!neighbours.isEmpty()) {
                 randDirection = randomNumberGenerator(neighbours.size());
                 neighbour = neighbours.get(randDirection);
                 current.neighbours[directions.get(randDirection)] = neighbour;
@@ -240,7 +244,7 @@ public class Game extends JFrame implements ActionListener, KeyListener {
     }
 
     public static void main(String[] args) {
-        Game g = new Game(8);
+        Game g = new Game(20);
         g.setVisible(true);
     }
 
@@ -273,7 +277,11 @@ public class Game extends JFrame implements ActionListener, KeyListener {
             if (configButtons(player.currentLocation)) northSouthDisabler();
 
         }
-        help.setText(player.currentLocation.orb ? "Press 'E'\nto pick up Orb" : String.valueOf(player.currentLocation.index));
+        if (player.currentLocation.target) {
+            help.setText("drop orb here by pressing 'G'");
+            return;
+        }
+        help.setText(player.currentLocation.orb ? "Press 'E'\nto pick up Orb" : "Orbs left to place: " + orbsLeft);
     }
 
     /***
@@ -322,12 +330,13 @@ public class Game extends JFrame implements ActionListener, KeyListener {
 
     /**
      * returns an index of a neighbour in a chosen direction
+     *
      * @param index index of a current tile
-     * @param dir 0 - North
-     *            1 - East
-     *            2 - South
-     *            3 - West
-     *            any other input will return -1
+     * @param dir   0 - North
+     *              1 - East
+     *              2 - South
+     *              3 - West
+     *              any other input will return -1
      * @return index of a neighbour in a chosen direction; -1 if chosen wrongly
      */
     private int neighbourIndex(int index, int dir) {
@@ -381,13 +390,25 @@ public class Game extends JFrame implements ActionListener, KeyListener {
         // opens up a minimap
         if (e.getKeyChar() == 'm') miniMap.setVisible(true);
         // picks up orb
-        if (e.getKeyChar() == 'e' && player.currentLocation.orb) {
+        if (e.getKeyChar() == 'e' && player.currentLocation.orb && !player.holdingOrb) {
             player.holdingOrb = true;
             player.currentLocation.orb = false;
-            help.setText(String.valueOf(player.currentLocation.index));
+            help.setText("Orbs left to place: " + orbsLeft);
         }
         // drops orb
         if (e.getKeyChar() == 'g' && player.holdingOrb && !player.currentLocation.orb) {
+            if (player.currentLocation.target) {
+                orbsLeft--;
+                if (orbsLeft == 0) {
+                    JOptionPane.showMessageDialog(new JFrame(), "Congrats, you have no life");
+                    System.exit(0);
+                }
+                player.holdingOrb = false;
+                player.currentLocation.target = false;
+                help.setText("Orbs left to place: " + orbsLeft);
+                return;
+            }
+            player.holdingOrb = false;
             player.currentLocation.orb = true;
             help.setText("Press 'E'\nto pick up Orb");
         }
