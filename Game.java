@@ -12,11 +12,12 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Game extends JFrame implements ActionListener, KeyListener {
     JButton northButton, southButton, westButton, eastButton;
     JButton[] buttons = new JButton[4];
-    JLabel help;
     ArrayList<Tile> maze;
     Player player;
     MiniMap miniMap;
     final int DIMENSION;
+
+    CenterWindow center;
 
     int orbsLeft;
 
@@ -27,40 +28,34 @@ public class Game extends JFrame implements ActionListener, KeyListener {
      */
     Game(int dimension) {
         this.setLayout(new BorderLayout());
-        this.setSize(500, 500);
+        this.setSize(600, 600);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        northButton = new JButton("^");
-        southButton = new JButton("v");
-        westButton = new JButton("<");
-        eastButton = new JButton(">");
-
-        northButton.setFont(new Font("MV Boli", Font.BOLD, 26));
-        southButton.setFont(new Font("MV Boli", Font.BOLD, 26));
-        westButton.setFont(new Font("MV Boli", Font.BOLD, 26));
-        eastButton.setFont(new Font("MV Boli", Font.BOLD, 26));
+        northButton = createSimpleButton("^");
+        southButton = createSimpleButton("v");
+        westButton = createSimpleButton("<");
+        eastButton = createSimpleButton(">");
 
         northButton.setFocusable(false);
         southButton.setFocusable(false);
         westButton.setFocusable(false);
         eastButton.setFocusable(false);
 
-        help = new JLabel("tmp");
-        help.setIcon(new ImageIcon(new ImageIcon("ikony/player.png").getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH)));
-        help.setFont(new Font("Comic Sans MS", Font.BOLD, 26));
-        help.setHorizontalAlignment(SwingConstants.CENTER);
 
         this.add(northButton, BorderLayout.NORTH);
         this.add(southButton, BorderLayout.SOUTH);
         this.add(eastButton, BorderLayout.EAST);
         this.add(westButton, BorderLayout.WEST);
-        this.add(help, BorderLayout.CENTER);
 
 //        maze = ogMaze();
         DIMENSION = dimension;
         maze = generateMaze(DIMENSION);
         miniMap = new MiniMap(maze, DIMENSION);
         orbsLeft = 1;
+
+        center = new CenterWindow(DIMENSION*DIMENSION);
+
+        this.add(center, BorderLayout.CENTER);
 
         northButton.addActionListener(this);
         southButton.addActionListener(this);
@@ -75,10 +70,9 @@ public class Game extends JFrame implements ActionListener, KeyListener {
 
         player = new Player();
         player.currentLocation = maze.get(randomNumberGenerator(DIMENSION * DIMENSION));
+        center.setRoomInfo(player.currentLocation);
 
-        help.setText(player.currentLocation.orb ? "Press 'E'\nto pick up Orb" : "\nOrbs left to place: " + orbsLeft);
         configButtons(player.currentLocation);
-
     }
 
     /***
@@ -198,7 +192,7 @@ public class Game extends JFrame implements ActionListener, KeyListener {
         Tile neighbour;
         Stack<Tile> stack = new Stack<>();
         Set<Tile> visited = new HashSet<>();
-
+        // DEPTH FIRST SEARCH
         Tile start = maze.get(randomNumberGenerator(maze.size()));
 
         stack.push(start);
@@ -244,7 +238,7 @@ public class Game extends JFrame implements ActionListener, KeyListener {
     }
 
     public static void main(String[] args) {
-        Game g = new Game(20);
+        Game g = new Game(8);
         g.setVisible(true);
     }
 
@@ -277,11 +271,9 @@ public class Game extends JFrame implements ActionListener, KeyListener {
             if (configButtons(player.currentLocation)) northSouthDisabler();
 
         }
-        if (player.currentLocation.target) {
-            help.setText("drop orb here by pressing 'G'");
-            return;
-        }
-        help.setText(player.currentLocation.orb ? "Press 'E'\nto pick up Orb" : "Orbs left to place: " + orbsLeft);
+        center.setRoomInfo(player.currentLocation);
+        center.updateScore();
+        center.repaint();
     }
 
     /***
@@ -375,6 +367,23 @@ public class Game extends JFrame implements ActionListener, KeyListener {
         southButton.setEnabled(false);
     }
 
+    /**
+     * returns button with style B-)
+     * @param text text that is displayed with button
+     * @return stylized instance of JButton
+     */
+    private static JButton createSimpleButton(String text) {
+        JButton button = new JButton(text);
+        button.setBackground(new Color(41, 41, 41));
+        button.setForeground(Color.white);
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        Font buttonFont = new Font("Arial", Font.BOLD, 26);
+        button.setFont(buttonFont);
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        return button;
+    }
+
     @Override
     public void keyTyped(KeyEvent e) {
 
@@ -393,24 +402,23 @@ public class Game extends JFrame implements ActionListener, KeyListener {
         if (e.getKeyChar() == 'e' && player.currentLocation.orb && !player.holdingOrb) {
             player.holdingOrb = true;
             player.currentLocation.orb = false;
-            help.setText("Orbs left to place: " + orbsLeft);
+            center.setRoomInfo(player.currentLocation);
+            center.repaint();
         }
         // drops orb
         if (e.getKeyChar() == 'g' && player.holdingOrb && !player.currentLocation.orb) {
+            player.holdingOrb = false;
+            player.currentLocation.orb = true;
             if (player.currentLocation.target) {
                 orbsLeft--;
                 if (orbsLeft == 0) {
-                    JOptionPane.showMessageDialog(new JFrame(), "Congrats, you have no life");
+                    JOptionPane.showMessageDialog(new JFrame(), "You won, your score is: " + center.score);
                     System.exit(0);
                 }
-                player.holdingOrb = false;
                 player.currentLocation.target = false;
-                help.setText("Orbs left to place: " + orbsLeft);
-                return;
             }
-            player.holdingOrb = false;
-            player.currentLocation.orb = true;
-            help.setText("Press 'E'\nto pick up Orb");
+            center.setRoomInfo(player.currentLocation);
+            center.repaint();
         }
     }
 }
