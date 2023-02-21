@@ -51,7 +51,7 @@ public class Game extends JFrame implements ActionListener, KeyListener {
         DIMENSION = dimension;
         maze = generateMaze(DIMENSION);
         miniMap = new MiniMap(maze, DIMENSION);
-        orbsLeft = 1;
+        orbsLeft = 5;
 
         center = new CenterWindow(DIMENSION*DIMENSION);
 
