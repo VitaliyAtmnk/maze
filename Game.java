@@ -50,7 +50,7 @@ public class Game extends JFrame implements ActionListener, KeyListener {
 
 //        maze = ogMaze();
         DIMENSION = dimension;
-        maze = generateMaze(DIMENSION);
+        maze = generateMaze(DIMENSION, 0);
         miniMap = new MiniMap(maze, DIMENSION);
         orbsLeft = 5;
 
@@ -172,17 +172,16 @@ public class Game extends JFrame implements ActionListener, KeyListener {
 
         return maze;
     }
-
-    //TODO: fix odd input
-
     /**
-     * The maze is generated with DFS algorithm
-     *
+     * A maze generated with either a DFS or BFS algorithm
      * @param dimension expects an even integer as an input and generates maze of a size dimension * dimension, if an odd integer is inputted
      *                  it may end up with an error. This problem will totally be fixed in the future :).
+     * @param algorithm 0 - Depth first search
+     *                  1 - bread first search
+     *                  any other int will call ogMaze
      * @return ArrayList of Tiles
      */
-    ArrayList<Tile> generateMaze(int dimension) {
+    ArrayList<Tile> generateMaze(int dimension, int algorithm) {
         ArrayList<Tile> maze = new ArrayList<>();
 
         for (int i = 0; i < dimension * dimension; i++) {
@@ -195,34 +194,66 @@ public class Game extends JFrame implements ActionListener, KeyListener {
         Set<Tile> visited = new HashSet<>();
         Tile start = maze.get(randomNumberGenerator(maze.size()));
 
-        stack.push(start);
-        visited.add(start);
+        if (algorithm == 0) {
+            stack.push(start);
+            visited.add(start);
 
-        while (!stack.empty()) {
-            Tile current = stack.pop();
+            while (!stack.empty()) {
+                Tile current = stack.pop();
 
-            ArrayList<Tile> neighbours = new ArrayList<>();
-            ArrayList<Integer> directions = new ArrayList<>();
+                ArrayList<Tile> neighbours = new ArrayList<>();
+                ArrayList<Integer> directions = new ArrayList<>();
 
-            for (int i = 0; i < 4; i++) {
-                neighbour = maze.get(neighbourIndex(current.index, i));
-                if (visited.contains(neighbour)) continue;
-                neighbours.add(neighbour);
-                directions.add(i);
+                for (int i = 0; i < 4; i++) {
+                    neighbour = maze.get(neighbourIndex(current.index, i));
+                    if (visited.contains(neighbour)) continue;
+                    neighbours.add(neighbour);
+                    directions.add(i);
 
-            }
+                }
 
-            if (!neighbours.isEmpty()) {
-                randDirection = randomNumberGenerator(neighbours.size());
-                neighbour = neighbours.get(randDirection);
-                current.neighbours[directions.get(randDirection)] = neighbour;
-                neighbour.neighbours[(directions.get(randDirection) + 2) % 4] = current;
-                stack.push(current);
-                stack.push(neighbour);
-                visited.add(neighbour);
+                if (!neighbours.isEmpty()) {
+                    randDirection = randomNumberGenerator(neighbours.size());
+                    neighbour = neighbours.get(randDirection);
+                    current.neighbours[directions.get(randDirection)] = neighbour;
+                    neighbour.neighbours[(directions.get(randDirection) + 2) % 4] = current;
+                    stack.push(current);
+                    stack.push(neighbour);
+                    visited.add(neighbour);
+                }
             }
         }
+        if (algorithm == 1) {
+            Queue<Tile> queue = new LinkedList<>();
+            queue.add(start);
+            visited.add(start);
 
+            while (!queue.isEmpty()) {
+                Tile current = queue.poll();
+
+                ArrayList<Tile> neighbours = new ArrayList<>();
+                ArrayList<Integer> directions = new ArrayList<>();
+
+                for (int i = 0; i < 4; i++) {
+                    neighbour = maze.get(neighbourIndex(current.index, i));
+                    if (visited.contains(neighbour)) continue;
+                    neighbours.add(neighbour);
+                    directions.add(i);
+                    visited.add(neighbour); // Mark neighbour as visited when it is discovered
+                }
+
+                if (!neighbours.isEmpty()) {
+                    for (int i = 0; i < neighbours.size(); i++) {
+                        neighbour = neighbours.get(i);
+                        int direction = directions.get(i);
+                        current.neighbours[direction] = neighbour;
+                        neighbour.neighbours[(direction + 2) % 4] = current;
+                        queue.add(neighbour); // Add unexplored neighbours to the queue
+                    }
+                }
+            }
+        }
+        else return ogMaze();
         ArrayList<Integer> toChoose = generateUniqueNumberSet(11, (maze.size()) - 1);
 
         // sets all orbs and targets (5 of each)
@@ -241,8 +272,6 @@ public class Game extends JFrame implements ActionListener, KeyListener {
         Game g = new Game(8);
         g.setVisible(true);
     }
-
-
     /**
      * Invoked when an action occurs.
      *
