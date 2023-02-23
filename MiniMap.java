@@ -5,8 +5,6 @@ import java.awt.*;
 import java.util.ArrayList;
 
 public class MiniMap extends JFrame {
-    private int x, y;
-
     MiniMap(ArrayList<Tile> maze, int dimension) {
         this.setLayout(new GridLayout(dimension, dimension));
         this.setSize(500, 500);

@@ -30,6 +30,7 @@ public class Game extends JFrame implements ActionListener, KeyListener {
         this.setLayout(new BorderLayout());
         this.setSize(600, 600);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.setResizable(false);
 
         northButton = createSimpleButton("^");
         southButton = createSimpleButton("v");
@@ -53,7 +54,7 @@ public class Game extends JFrame implements ActionListener, KeyListener {
         miniMap = new MiniMap(maze, DIMENSION);
         orbsLeft = 5;
 
-        center = new CenterWindow(DIMENSION*DIMENSION);
+        center = new CenterWindow(DIMENSION * DIMENSION);
 
         this.add(center, BorderLayout.CENTER);
 
@@ -192,7 +193,6 @@ public class Game extends JFrame implements ActionListener, KeyListener {
         Tile neighbour;
         Stack<Tile> stack = new Stack<>();
         Set<Tile> visited = new HashSet<>();
-        // DEPTH FIRST SEARCH
         Tile start = maze.get(randomNumberGenerator(maze.size()));
 
         stack.push(start);
@@ -368,7 +368,8 @@ public class Game extends JFrame implements ActionListener, KeyListener {
     }
 
     /**
-     * returns button with style B-)
+     * returns button with style B->
+     *
      * @param text text that is displayed with button
      * @return stylized instance of JButton
      */
@@ -397,18 +398,19 @@ public class Game extends JFrame implements ActionListener, KeyListener {
     @Override
     public void keyReleased(KeyEvent e) {
         // opens up a minimap
-        if (e.getKeyChar() == 'm') miniMap.setVisible(true);
+        if (e.getKeyChar() == 'm') {
+            miniMap.setVisible(true);
+            return;
+        }
         // picks up orb
         if (e.getKeyChar() == 'e' && player.currentLocation.orb && !player.holdingOrb) {
             player.holdingOrb = true;
             player.currentLocation.orb = false;
-            center.setRoomInfo(player.currentLocation);
-            center.repaint();
         }
         // drops orb
         if (e.getKeyChar() == 'g' && player.holdingOrb && !player.currentLocation.orb) {
             player.holdingOrb = false;
-            player.currentLocation.orb = true;
+            player.currentLocation.orb = !player.currentLocation.target;
             if (player.currentLocation.target) {
                 orbsLeft--;
                 if (orbsLeft == 0) {
@@ -417,9 +419,32 @@ public class Game extends JFrame implements ActionListener, KeyListener {
                 }
                 player.currentLocation.target = false;
             }
-            center.setRoomInfo(player.currentLocation);
-            center.repaint();
         }
+        // při použití kláves místo tlačítek, můžete kompletně ignorovat trapku, tohle je featura ne bug.
+        if (e.getKeyCode() == KeyEvent.VK_UP && northButton.isEnabled()) {
+            center.updateScore();
+            player.currentLocation = player.currentLocation.neighbours[0];
+            if (configButtons(player.currentLocation)) westEastDisabler();
+        }
+        if (e.getKeyCode() == KeyEvent.VK_RIGHT && eastButton.isEnabled()) {
+            center.updateScore();
+            player.currentLocation = player.currentLocation.neighbours[1];
+            if (configButtons(player.currentLocation)) northSouthDisabler();
+        }
+        if (e.getKeyCode() == KeyEvent.VK_DOWN && southButton.isEnabled()) {
+            center.updateScore();
+            player.currentLocation = player.currentLocation.neighbours[2];
+            if (configButtons(player.currentLocation)) westEastDisabler();
+        }
+        if (e.getKeyCode() == KeyEvent.VK_LEFT && westButton.isEnabled()) {
+            center.updateScore();
+            player.currentLocation = player.currentLocation.neighbours[3];
+            if (configButtons(player.currentLocation)) northSouthDisabler();
+        }
+
+        center.setRoomInfo(player.currentLocation);
+        center.repaint();
+
     }
 }
 
