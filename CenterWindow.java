@@ -3,7 +3,9 @@ package gui.maze;
 import javax.swing.*;
 import java.awt.*;
 
-
+/**
+ * window extends JPanel :) (canvas, gamePanel, GameUI, dashboard...)
+*/
 public class CenterWindow extends JPanel {
 
     int score;
@@ -34,6 +36,7 @@ public class CenterWindow extends JPanel {
 
     void setRoomInfo(Tile current) {
         String path = "ikony//Tiles//";
+        //repetetive code from minimap
         if (current.neighbours[0] != null) path += "N";
         if (current.neighbours[1] != null) path += "E";
         if (current.neighbours[2] != null) path += "S";
@@ -68,6 +71,7 @@ public class CenterWindow extends JPanel {
         g2.setColor(Color.decode("#CA4262"));
         g2.setFont(new Font("Arial", Font.BOLD, 30));
 
+        //Optional elements should not be drawn in paint override
         if(orb) g2.drawString("Orb",370,60);
         if(target) g2.drawString("Target",355,60);
         if(trap) g2.drawString("Trap",365,60);

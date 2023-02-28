@@ -16,12 +16,13 @@ public class Game extends JFrame implements ActionListener, KeyListener {
     Player player;
     MiniMap miniMap;
     final int DIMENSION;
-
+    final static int BFS_MAZE = 1;
+    final static int DFS_MAZE = 0;
     CenterWindow center;
 
     int orbsLeft;
 
-    /***
+    /**
      * A window with "generated maze"
      * It puts player into a starting position, which is one of the Tiles from @maze list
      * Initializes all buttons, panel and styles them
@@ -49,7 +50,7 @@ public class Game extends JFrame implements ActionListener, KeyListener {
         this.add(westButton, BorderLayout.WEST);
 
 //        maze = ogMaze();
-        DIMENSION = dimension;
+        DIMENSION = dimension; //final int = ? Not every constant gotta be final, especially if you set it
         maze = generateMaze(DIMENSION, 0);
         miniMap = new MiniMap(maze, DIMENSION);
         orbsLeft = 5;
@@ -58,6 +59,7 @@ public class Game extends JFrame implements ActionListener, KeyListener {
 
         this.add(center, BorderLayout.CENTER);
 
+        //HANDLER - in this case it should be used like an extra class!
         northButton.addActionListener(this);
         southButton.addActionListener(this);
         westButton.addActionListener(this);
@@ -87,7 +89,7 @@ public class Game extends JFrame implements ActionListener, KeyListener {
         for (int i = 0; i < 64; i++) {
             maze.add(new Tile(new Tile[]{null, null, null, null}, false, false, false, i));
         }
-        // Boháčová noční můra
+        // Boháčová noční můra << adjective? jako modrá, mladá...? 
         maze.get(0).neighbours = new Tile[]{maze.get(60), maze.get(1), null, maze.get(39)};
         maze.get(1).neighbours = new Tile[]{null, null, maze.get(9), maze.get(0)};
         maze.get(2).neighbours = new Tile[]{maze.get(62), maze.get(3), maze.get(10), null};
@@ -176,7 +178,8 @@ public class Game extends JFrame implements ActionListener, KeyListener {
      * A maze generated with either a DFS or BFS algorithm
      * @param dimension expects an even integer as an input and generates maze of a size dimension * dimension, if an odd integer is inputted
      *                  it may end up with an error. This problem will totally be fixed in the future :).
-     * @param algorithm 0 - Depth first search
+     * >>Constants/Enums are used for such practice, changed it
+     *  @param algorithm 0 - Depth first search
      *                  1 - bread first search
      *                  any other int will call ogMaze
      * @return ArrayList of Tiles
@@ -194,7 +197,15 @@ public class Game extends JFrame implements ActionListener, KeyListener {
         Set<Tile> visited = new HashSet<>();
         Tile start = maze.get(randomNumberGenerator(maze.size()));
 
-        if (algorithm == 0) {
+        //reduce code amount, ie: lists are same, why initialize them in every branch separately?
+        //Otherwise implementation is OK for simple maze, this one can cause trap in only way to the orb etc
+        //  __________
+        //  | target |
+        //  |        |
+        //  |  trap  | <--chokepoint (in theory - trap can port to the target)
+        //  |        |
+        //There is a reason even a professional game dev team decided to make it static :)
+        if (algorithm == DFS_MAZE) {
             stack.push(start);
             visited.add(start);
 
@@ -223,7 +234,7 @@ public class Game extends JFrame implements ActionListener, KeyListener {
                 }
             }
         }
-        if (algorithm == 1) {
+        if (algorithm == BFS_MAZE) {
             Queue<Tile> queue = new LinkedList<>();
             queue.add(start);
             visited.add(start);
@@ -254,6 +265,8 @@ public class Game extends JFrame implements ActionListener, KeyListener {
             }
         }
         else return ogMaze();
+        //^RED FLAG
+        //You are returning ogMaze with DFS, missing elif causes that!
         ArrayList<Integer> toChoose = generateUniqueNumberSet(11, (maze.size()) - 1);
 
         // sets all orbs and targets (5 of each)
@@ -307,6 +320,7 @@ public class Game extends JFrame implements ActionListener, KeyListener {
 
     /***
      * enables/disables all 4 buttons depending on currPos neighbours.
+     * >>Careful what you write, it can never disable all four buttons
      * if we are able to get from current room to another one, then the button is enabled, otherwise not
      * @param currPos instance of Tile Class, in which is Player currently in
      * @return if a Tile is a crossRoom or not
@@ -377,10 +391,13 @@ public class Game extends JFrame implements ActionListener, KeyListener {
                 if (index % DIMENSION != 0) return index - 1;
                 return ((index + (DIMENSION * (dim_half + 1))) - 1) % (DIMENSION * DIMENSION); // - is an edge
         }
-        return -1;
+        return -1; //use default switch case
     }
 
     /***
+     * Enums, they solve a lot of trouble on closed set :)
+     * Because only thing these are disabling efficiently is my sanity.
+     * 
      * disables westButton and eastButton
      */
     private void westEastDisabler() {
@@ -450,8 +467,10 @@ public class Game extends JFrame implements ActionListener, KeyListener {
             }
         }
         // při použití kláves místo tlačítek, můžete kompletně ignorovat trapku, tohle je featura ne bug.
+        //A taky při zpětným průchodu (tam a zpátky) z crossroads, double feature!
         if (e.getKeyCode() == KeyEvent.VK_UP && northButton.isEnabled()) {
-            center.updateScore();
+            center.updateScore(); //< you update score in every case, just put it next to repaint
+            //if the argument is preventing score update after every key press, simply check at the end wheteher room changed
             player.currentLocation = player.currentLocation.neighbours[0];
             if (configButtons(player.currentLocation)) westEastDisabler();
         }

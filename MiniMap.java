@@ -5,6 +5,7 @@ import java.awt.*;
 import java.util.ArrayList;
 
 public class MiniMap extends JFrame {
+    
     MiniMap(ArrayList<Tile> maze, int dimension) {
         this.setLayout(new GridLayout(dimension, dimension));
         this.setSize(500, 500);
@@ -22,6 +23,13 @@ public class MiniMap extends JFrame {
 }
 
 class TileImage extends JLabel {
+    /**
+     * Drawing pictures as an overlay is *really* inefficient in scope of this task.
+     * It is however a good approach coming for 3D textures and resources, so I guess I can call it a good practice.
+     * Also, all possible variations are quite easily calculable (V(4,2) = 4^2 - 1 all closed scenario), therefore
+     * drawing it should not be such a pain.
+     * @param room room to be drawn
+     */
     TileImage(Tile room) {
         String imagePath = "";
         boolean north, east, south, west;
@@ -31,6 +39,7 @@ class TileImage extends JLabel {
         south = room.neighbours[2] != null;
         west = room.neighbours[3] != null;
 
+        //This is certainly...unique approach
         if (north) imagePath += "N";
         if (east) imagePath += "E";
         if (south) imagePath += "S";
